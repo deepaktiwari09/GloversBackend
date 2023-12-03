@@ -1,6 +1,14 @@
-import Elysia from "elysia";
-import { app } from "..";
+import Elysia, { t } from "elysia";
 import { subscriptionFanPlan, subscriptionPlan } from "../db";
+import {
+  GetSubscriptionsByType,
+  createNewSubscription,
+  createSubscriptionDetails,
+  deleteSubscription,
+  deleteSubscriptionDetails,
+} from "../storage/SubscriptionSlice";
+import { Prisma } from "@prisma/client";
+import { baseResponse, baseHeader, baseError } from ".";
 
 const subscriberType = {
   coach: "coach",
@@ -11,32 +19,14 @@ const api = new Elysia();
 
 api.get(
   "/get-subscription-list/:type",
-  ({ params: { type }, set }) => {
-    switch (type) {
-      case "coach":
-        set.status = 200;
-        return new Response(
-          JSON.stringify({
-            data: subscriptionPlan,
-          }),
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      case "fan":
-        set.status = 200;
-        return new Response(
-          JSON.stringify({
-            data: subscriptionFanPlan,
-          }),
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-      default:
-        set.status = 400;
-        return "type is missing";
+  async ({ params: { type }, set }) => {
+    try {
+      let data = await GetSubscriptionsByType(type);
+      return new Response(baseResponse<typeof data>(data), baseHeader);
+    } catch (error) {
+      set.status = 400;
+      set.headers = baseHeader.headers;
+      return baseError<typeof error>(error);
     }
   },
   {
@@ -50,5 +40,49 @@ api.get(
     },
   }
 );
+
+api.post("/create-subscription", async ({ body, set }) => {
+  try {
+    let data = await createNewSubscription(body);
+    return new Response(baseResponse<typeof data>(data), baseHeader);
+  } catch (error) {
+    set.status = 400;
+    set.headers = baseHeader.headers;
+    return baseError<typeof error>(error);
+  }
+});
+
+api.post("/create-subscription-details", async ({ body, set }) => {
+  try {
+    let data = await createSubscriptionDetails(body);
+    return new Response(baseResponse<typeof data>(data), baseHeader);
+  } catch (error) {
+    set.status = 400;
+    set.headers = baseHeader.headers;
+    return baseError<typeof error>(error);
+  }
+});
+
+api.delete("/delete-subscription-details", async ({ body, set }) => {
+  try {
+    let data = await deleteSubscriptionDetails(body);
+    return new Response(baseResponse<typeof data>(data), baseHeader);
+  } catch (error) {
+    set.status = 400;
+    set.headers = baseHeader.headers;
+    return baseError<typeof error>(error);
+  }
+});
+
+api.delete("/delete-subscription", async ({ body, set }) => {
+  try {
+    let data = await deleteSubscription(body);
+    return new Response(baseResponse<typeof data>(data), baseHeader);
+  } catch (error) {
+    set.status = 400;
+    set.headers = baseHeader.headers;
+    return baseError<typeof error>(error);
+  }
+});
 
 export { api as subscriptionService };

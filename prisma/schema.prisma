@@ -9,3 +9,22 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
+
+model subscriptions {
+  id                   String                 @id @default(auto()) @map("_id") @db.ObjectId
+  code                 String                 @unique
+  title                String
+  price                String
+  duration             String
+  type                 String
+  subscription_details subscription_details[]
+}
+
+model subscription_details {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  subscriptions  subscriptions @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String        @db.ObjectId
+  title          String
+  image_url      String
+  description    String
+}
